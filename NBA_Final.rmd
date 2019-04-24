@@ -5,6 +5,9 @@ date: "April 16, 2019"
 output: html_document
 ---
 
+GtHub:
+https://github.com/crj688/NBA-DRAFT-2019-FINAL.git
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
