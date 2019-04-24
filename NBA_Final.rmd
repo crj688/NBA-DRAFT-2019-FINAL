@@ -1,0 +1,344 @@
+---
+title: "NBA"
+author: "Jackson, Johnson"
+date: "April 16, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_libraries}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(tidyverse)
+library(caret)
+library(corrplot)
+library(MLmetrics)
+```
+
+```{r Load_Data}
+Draft <- read_csv("./data/drafted_players.csv")
+Past_Players <- read_csv("./data/previous_college_players.csv")
+Current_Players <- read_csv("./data/current_college_players.csv")
+```
+
+```{r Clean Name Column}
+Draft$Player = str_extract(Draft$Player, "[^\\\\]+")
+Past_Players$Player = str_extract(Past_Players$Player, "[^\\\\]+")
+Current_Players$Player = str_extract(Current_Players$Player, "[^\\\\]+")
+```
+
+```{r Add Column For if Drafted}
+
+Past_Players$drafted <- 0
+Past_Players %>% 
+  filter(Player %in% Draft$Player) %>% 
+  mutate(drafted = 1) %>% 
+  select(Player, drafted)
+Past_Players$drafted[Past_Players$Player %in% Draft$Player] <- 1
+
+Past_Players %>% 
+  filter(drafted == 1)
+```
+
+```{r Power 5 Conference Past Players}
+Past_Players$PWR5 <- 0
+Past_Players %>% 
+  filter(Past_Players$Conf == 'ACC'|Past_Players$Conf =='SEC'|Past_Players$Conf == 'Pac-12'|Past_Players$Conf == 'Big Ten'|Past_Players$Conf == 'Big 12') %>% 
+  mutate(PWR5 = 1) %>% 
+  select(Conf, PWR5)
+Past_Players$PWR5[Past_Players$Conf == 'ACC'|Past_Players$Conf =='SEC'|Past_Players$Conf == 'Pac-12'|Past_Players$Conf == 'Big Ten'|Past_Players$Conf == 'Big 12' ] <- 1
+```
+
+```{r Power 5 Conference Current Players}
+Current_Players$PWR5 <- 0
+Current_Players %>% 
+  filter(Current_Players$Conf == 'ACC'|Current_Players$Conf =='SEC'|Current_Players$Conf == 'Pac-12'|Current_Players$Conf == 'Big Ten'|Current_Players$Conf == 'Big 12') %>% 
+  mutate(PWR5 = 1) %>% 
+  select(Conf, PWR5)
+Current_Players$PWR5[Current_Players$Conf == 'ACC'|Current_Players$Conf =='SEC'|Current_Players$Conf == 'Pac-12'|Current_Players$Conf == 'Big Ten'|Current_Players$Conf == 'Big 12' ] <- 1
+```
+
+
+```{r Changing the numeric column to a factor }
+Past_Players$drafted <- as.factor(Past_Players$drafted)
+str(Past_Players)
+```
+
+```{r Modifying the variables needed in Past Players}
+modifypastplayerdf <- Past_Players %>%
+  select(Rk,Player,Pos, School, 10:17, 20:23, 25:28) 
+```
+
+
+```{r Lets rename some variables to nicer names that R likes}
+Past_Players2 <- modifypastplayerdf %>%
+  rename('TwoPointsPerGame' = '2P', 'TwoPointAttempsPerGame' = '2PA', 'ThreePointsPerGame' = '3P', 'ThreePointAttempsPerGame' = '3PA')
+```
+
+
+```{r We did some graphing/plotting to check out the relationships btwn variables}
+ggplot(data=Past_Players2) + 
+  geom_point(aes(x=PTS, y=AST, colour=drafted, shape=drafted)) +
+  facet_wrap(vars(PWR5))
+
+ggplot(data=Past_Players2) + 
+  geom_point(aes(x=PTS, y=AST, colour=drafted, shape=drafted)) +
+  facet_wrap(vars(Pos))
+
+ggplot(data=Past_Players2) + 
+  geom_point(aes(x=TRB, y=STL, colour=drafted, shape=drafted)) +
+  facet_wrap(vars(PWR5))
+
+ggplot(data=Past_Players2) + 
+  geom_point(aes(x=TRB, y=STL, colour=drafted, shape=drafted)) +
+  facet_wrap(vars(Pos))
+
+ggplot(data=Past_Players2) + 
+  geom_point(aes(x=FG, y=FGA, colour=drafted, shape=drafted)) +
+  facet_wrap(vars(PWR5))
+
+ggplot(data=Past_Players2) + 
+  geom_point(aes(x=TwoPointsPerGame, y=PTS, colour=drafted, shape=drafted)) +
+  facet_wrap(vars(PWR5))
+
+ggplot(data=Past_Players2) + 
+  geom_point(aes(x=ThreePointsPerGame, y=PTS, colour=drafted, shape=drafted)) +
+  facet_wrap(vars(PWR5))
+```
+
+
+```{r We even did a corrplot}
+Draftplot2 <-cor(Past_Players2[,c(10:17)])  
+corrplot(cor(Draftplot2))
+
+```
+
+```{r Partitioning the Data}
+set.seed(267)
+test_pct <- 0.20
+num_test_recs <- as.integer(test_pct * nrow(Past_Players2))
+
+test_recs <- sample(nrow(Past_Players2), num_test_recs)
+train <- Past_Players2[-test_recs,]
+test <- Past_Players2[test_recs,]
+```
+
+
+```{r Lets see how many players were drafted in an easy to read table format}
+table(train$drafted)
+```
+
+
+```{r Box Plots to look at the relationships between variables on training data}
+ggplot(train) + geom_boxplot(aes(x = drafted, y = PTS, colour = drafted))
+ggplot(train) + geom_boxplot(aes(x = drafted, y = AST, colour = drafted))
+ggplot(train) + geom_boxplot(aes(x = drafted, y = STL, colour = drafted))
+ggplot(train) + geom_boxplot(aes(x = drafted, y = TRB, colour = drafted))
+
+ggplot(train) + geom_boxplot(aes(x = Pos, y = PTS, colour = drafted))
+ggplot(train) + geom_boxplot(aes(x = Pos, y = AST, colour = drafted))
+ggplot(train) + geom_boxplot(aes(x = Pos, y = STL, colour = drafted))
+ggplot(train) + geom_boxplot(aes(x = Pos, y = TRB, colour = drafted))
+```
+
+```{r 5 Predictive Models and Plots }
+pastplayers1 <- glm(drafted ~ PTS, data=train, family=binomial(link="logit"))
+summary(pastplayers1)
+
+ggplot(data=data.frame(Predicted=pastplayers1$fitted.values, Actual=train$drafted), 
+       aes(y=Predicted, x=Actual)) + geom_point()
+
+pastplayers2 <- glm(drafted ~ PTS +  TRB + AST + BLK + STL + PWR5, data=train, family=binomial(link="logit"))
+summary(pastplayers2)
+
+ggplot(data=data.frame(Predicted=pastplayers2$fitted.values, Actual=train$drafted), 
+       aes(y=Predicted, x=Actual)) + geom_point()
+
+pastplayers3 <- glm(drafted ~ PTS + AST + TRB + PWR5 , data=train, family=binomial(link="logit"))
+summary(pastplayers3)
+
+ggplot(data=data.frame(Predicted=pastplayers3$fitted.values, Actual=train$drafted), 
+       aes(y=Predicted, x=Actual)) + geom_point()
+
+pastplayers4 <- glm(drafted ~ PTS + AST + TRB + STL + BLK + PWR5 + Pos, data=train, family=binomial(link="logit"))
+summary(pastplayers4)
+
+ggplot(data=data.frame(Predicted=pastplayers4$fitted.values, Actual=train$drafted), 
+       aes(y=Predicted, x=Actual)) + geom_point()
+
+pastplayers5 <- glm(drafted ~ PTS + PWR5 + Pos, data=train, family=binomial(link="logit"))
+summary(pastplayers4)
+
+ggplot(data=data.frame(Predicted=pastplayers4$fitted.values, Actual=train$drafted), 
+       aes(y=Predicted, x=Actual)) + geom_point()
+
+```
+
+
+```{r We have chosen our cut off value to be .5}
+yhat_M1 <- (pastplayers1$fit > 0.5) * 1
+yhat_M2 <- (pastplayers2$fit > 0.5) * 1
+yhat_M3 <- (pastplayers3$fit > 0.5) * 1
+yhat_M4 <- (pastplayers4$fit > 0.5) * 1
+yhat_M5 <- (pastplayers5$fit > 0.5) * 1
+```
+
+```{r Lets look at our Y values}
+pastplayers1$y[1:100]
+```
+
+```{r A easy to read table to double check that Y is what we think it is}
+table(train$drafted, pastplayers1$y)
+```
+
+```{r Storing the actual values and the predictions from the 5 models in a dataframe. Since binary factors, we decided to convert them to factors too}
+drafted_fit_predictions <- data.frame(as.factor(pastplayers1$y),
+                                      as.factor(yhat_M1),
+                                      as.factor(yhat_M2),
+                                      as.factor(yhat_M3), 
+                                      as.factor(yhat_M4), 
+                                      as.factor(yhat_M5)) 
+                                     
+
+names(drafted_fit_predictions) <-
+  c("yact","yhat1","yhat2","yhat3", "yhat4", "yhat5")
+```
+
+```{r Used table to create *confusion matrices* A simple way to interpret a cross-tabulation of predicted vs. actual values.}
+
+with(drafted_fit_predictions, table(yhat1, yact))
+with(drafted_fit_predictions, table(yhat2, yact))
+with(drafted_fit_predictions, table(yhat3, yact))
+with(drafted_fit_predictions, table(yhat4, yact))
+with(drafted_fit_predictions, table(yhat5, yact))
+```
+
+
+```{r Here is the Caret Confusion Matrix, this gives us more details}
+cm1 <- confusionMatrix(drafted_fit_predictions$yhat1, 
+                       drafted_fit_predictions$yact, 
+                       positive="1")
+cat("\n\nModel 1\n")
+cm1
+
+cm2 <- confusionMatrix(drafted_fit_predictions$yhat2, 
+                       drafted_fit_predictions$yact, 
+                       positive="1")
+cat("\n\nModel 2\n")
+cm2
+
+cm3 <- confusionMatrix(drafted_fit_predictions$yhat3, 
+                       drafted_fit_predictions$yact, 
+                       positive="1")
+
+cat("\n\nModel 3\n")
+cm3
+
+cm4 <- confusionMatrix(drafted_fit_predictions$yhat4, 
+                       drafted_fit_predictions$yact, 
+                       positive="1")
+cat("\n\nModel 4\n")
+cm4
+
+cm5 <- confusionMatrix(drafted_fit_predictions$yhat5, 
+                       drafted_fit_predictions$yact, 
+                       positive="1")
+
+cat("\n\nModel 5\n")
+cm5
+
+```
+
+
+```{r  Testing Model 1 on test data}
+prob_test1 <- predict(pastplayers1, newdata=test, type="response")
+yhat_test1 <- (prob_test1 > 0.5) * 1
+head(cbind(test$Player, yhat_test1,prob_test1))
+```
+
+```{r Testing Model 2 on test data}
+prob_test2 <- predict(pastplayers2, newdata=test, type="response")
+yhat_test2 <- (prob_test2 > 0.5) * 1
+head(cbind(test$Player, yhat_test2,prob_test2))
+```
+
+```{r Testing Model 3 on test data}
+prob_test3 <- predict(pastplayers3, newdata=test, type="response")
+yhat_test3 <- (prob_test3 > 0.5) * 1
+head(cbind(test$Player, yhat_test3,prob_test3))
+
+```
+```{r Testing Model 4 on test data}
+prob_test4 <- predict(pastplayers4, newdata=test, type="response")
+yhat_test4 <- (prob_test4 > 0.5) * 1
+head(cbind(test$Player, yhat_test4,prob_test4))
+
+```
+```{r Testing Model 5 on test data}
+prob_test5 <- predict(pastplayers5, newdata=test, type="response")
+yhat_test5 <- (prob_test5 > 0.5) * 1
+head(cbind(test$Player, yhat_test5,prob_test5))
+
+```
+
+
+```{r Storing the actual values and the predictions from the 5 models in a dataframe. Since they are binary factors, we decided to convert them to factors.}
+
+drafted_test_predictions <- data.frame(as.factor(pastplayers1$y),
+                                       as.factor(yhat_test1),
+                                       as.factor(yhat_test2),
+                                       as.factor(yhat_test3),
+                                       as.factor(yhat_test4),
+                                       as.factor(yhat_test5))
+
+names(drafted_test_predictions) <- c("yact","yhat1","yhat2","yhat3","yhat4","yhat5")
+```
+
+```{r}
+cm1_test <- confusionMatrix(drafted_test_predictions$yhat1,
+                            drafted_test_predictions$yact, positive="1")
+cm2_test <- confusionMatrix(drafted_test_predictions$yhat2,
+                            drafted_test_predictions$yact, positive="1")
+cm3_test <- confusionMatrix(drafted_test_predictions$yhat3,
+                            drafted_test_predictions$yact, positive="1")
+cm4_test <- confusionMatrix(drafted_test_predictions$yhat4,
+                            drafted_test_predictions$yact, positive="1")
+cm5_test <- confusionMatrix(drafted_test_predictions$yhat5,
+                            drafted_test_predictions$yact, positive="1")
+```
+
+```{r}
+cat("\n\nModel 1\n")
+cm1_test
+cm1_test$overall['Accuracy']
+cat("\n\nModel 2\n")
+cm2_test
+cm2_test$overall['Accuracy']
+cat("\n\nModel 3\n")
+cm3_test
+cm3_test$overall['Accuracy']
+cat("\n\nModel 4\n")
+cm4_test
+cm4_test$overall['Accuracy']
+cat("\n\nModel 5\n")
+cm5_test
+cm5_test$overall['Accuracy']
+```
+
+```{r Model 2 on our Holdout Dataset: Current Players}
+currplay_2 <- predict(pastplayers2, newdata=Current_Players, type="response")
+yhat_currplay2 <- (currplay_2  > 0.5) * 1
+head(cbind(Current_Players$Player, yhat_currplay2,currplay_2))
+```
+
+```{r Model 5 on our Holdout Dataset: Current Players}
+currplay_5 <- predict(pastplayers5, newdata=Current_Players, type="response")
+yhat_currplay5 <- (currplay_5 > 0.5) * 1
+head(cbind(Current_Players$Player, yhat_currplay5,currplay_5))
+```
+

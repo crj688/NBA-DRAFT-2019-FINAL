@@ -1,0 +1,70 @@
+Hello Prof,
+
+This is Jordan and Christina.
+And our project is on  NBA 2019 Draft predictions.
+We are here predicting which players from the NCAA will get drafted into the NBA in May of 2019.
+
+We are using a Data Sets from https://www.sports-reference.com that contains statisical information
+from players in the NCAA from 2013 to 2017. The data in this data set ranges from players names, points per game
+rebounds, assists, college, age, rank/position, etc. We will show you that we've modified the data to include the variables we thought to be important.
+
+With this data set we decided to do Logistic Regression to build models in which we thought would be best in predicting 
+which players would be drafted into the NBA in May 2019.
+
+Now that we've given you a brief intro we will get started.
+
+We will need to run lines 8 through 10 in order to Knit this Rmd, R Markdown file to an html file.
+
+Next we will run lines 12 through 20 to load the libraries so that our code will work.
+
+Next we will run lines 23 to 26. These lines allow the csv files with the datasets to help us with this assignment
+We are reading all 3 of these csv files from the website, sports-reference.com. We are naming them
+Draft for the players that have already been drafted, Past Players for previous college players, and Current Players for
+college players that are currently playing.
+
+Now for lines 29 through 32 we need to make sure the Player names from each dataset coincide with one another
+
+With lines 35 to 42 we are adding a column, Drafted, to the Past Players data frame.
+0 if not drafted 1 for if drafted.
+
+With lines 48 through 63 we are adding a column, PWR5, to the data frames Past Players and Current Players
+This is simply those who are college players who are in the Huge Conferences such as Big Ten,ACC, Pac 12 etc.
+
+With lines 67 to 69 we changed the drafted column we created from being numeric to being a factor.
+
+Also with lines 72 to 74 we wanted to modify the Past Players data set/frame. We dont need certain variables such as class standing, games (G), minutes played (MP), ETC.
+
+With lines 78 to 81 we wanted to rename some of the variables the R had a problem with. Such as 2P, 3P and 2PA and 3PA
+
+*From lines 84 to 112 we wanted to plot/graph some of the relationships between the variables.  
+
+Now for lines 121 to 128 we wanted to partition the Past Player data. We set the test data to 20% and the train data to 80%. Therefore, the test had 100 records and the train had 400.
+
+With lines 132 to 134 since we want to predict who would be drafted we thought it a good idea to see in a table form how many players of the 500 were drafted and how many not.
+Looks as if of the 400 Past NCAA Players in the training data 76 were drafted and 324 weren't.
+
+*With lines 137 to 147 we did plotting with the training data to look at the relationship between the variables.
+
+*With lines 147 to 180 we did some predictive modeling and plots. (We figured 5 might be our best model)
+
+With lines 183 to 185 we wanted our cutoff value to be .5. Therefore if the probability is greater than .5 then yes the player would be drafted. Vice versa then not drafted.
+
+Lines 191 to 193 we just wanted to look at our y values.
+
+In lines 195 to 197, once again we are checking the Y values. This time with a quick easy to read table.
+
+With lines 199 to 210 Storing the actual values and the predictions from the 5 models in a dataframe. Since binary factors, we decided to convert them to factors too.
+
+With lines 212 to 219 Used 'table' to create *confusion matrices*. A simple way to interpret a cross-tabulation of predicted vs. actual values. 
+
+With lines 222 to 255 we used the Caret Confusion Matrices. This gives us more details about the models.
+
+*On lines 258 to 288 we tested our 5 prediction models on the test data set.
+
+Lines 290 to 300 storing the actual values and the predictions from the 5 models in a dataframe. Since they are binary factors, we decided to convert them to factors.
+
+**Lines 302 to 313 we get an error not sure why
+
+*With lines 315 to 330 we used the Caret Confusion Matrices. This gives us more details about the models.
+
+With lines 333 to 344 We tested our best models, models 2 and 5, with our holdout data: Current Players.

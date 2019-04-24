@@ -1,0 +1,61 @@
+---
+title: "KNN NBA Final"
+author: "Jackson, Johnson"
+date: "4/22/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(tidyverse)
+library(caret)
+library(corrplot)
+library(MLmetrics)
+```
+
+
+```{r}
+Draft <- read.csv("./data/drafted_players.csv")
+Past_Players <- read.csv("./data/previous_college_players.csv")
+Current_Players <- read.csv("./data/current_college_players.csv")
+NBA_Players <- read.csv("./data/NBA_Players.csv")
+```
+```{r}
+Draft$Player = str_extract(Draft$Player, "[^\\\\]+")
+Past_Players$Player = str_extract(Past_Players$Player, "[^\\\\]+")
+Current_Players$Player = str_extract(Current_Players$Player, "[^\\\\]+")
+NBA_Players$Player = str_extract(NBA_Players$Player, "[^\\\\]+")
+
+```
+```{r}
+Current_Players[,9:ncol(Current_Players)] = Current_Players[,9:ncol(Current_Players)]/Current_Players$G
+```
+
+```{r}
+NBA_Players[,7:25] = NBA_Players[,7:25]/NBA_Players$G
+```
+```{r}
+Current_Players_KNN <- Current_Players %>%
+  select(Player,PTS, TRB, AST, STL, BLK )
+NBA_Players_KNN <- NBA_Players %>% 
+  select(Player,PTS, TRB, AST, STL, BLK )
+```
+
+```{r}
+library(class)
+```
+
+```{r}
+NBA.knn <- knn(NBA_Players_KNN[,2:6],
+               Current_Players_KNN[,2:6], 
+               NBA_Players_KNN$Player, k=5, prob = TRUE)
+NBA.knn
+```
+
